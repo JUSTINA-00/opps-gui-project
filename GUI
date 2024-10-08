@@ -1,0 +1,266 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+public class MentalHealthTracker {
+	private JFrame loginFrame, welcomeFrame, questionsFrame, resultsFrame, createAccountFrame;
+    private JComboBox<String> moodComboBox;
+    private JRadioButton yesButton, noButton, maybeButton;
+    private ButtonGroup responseGroup;
+    private JLabel scoreLabel;
+    private JTextField usernameField, loginUsernameField;
+    private JPasswordField passwordField, confirmPasswordField, loginPasswordField;
+    private int score = 0;
+
+    // Hardcoded username and password for login (this can be changed later for database logic)
+    private String registeredUsername = "user123";
+    private String registeredPassword = "password123";
+
+    public static void main(String[] args) throws SQLException {
+    	Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/userdb","root","MYSQLjustina@00");
+    	System.out.println("Connection Success");
+        new MentalHealthTracker().createLoginWindow();
+    }
+
+    // 1. Login Window
+    public void createLoginWindow() {
+        loginFrame = new JFrame("Login");
+        loginFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        loginFrame.setSize(800, 800);
+
+        JButton loginButton = new JButton("Login");
+        JButton createAccountButton = new JButton("Create Account");
+
+        loginButton.addActionListener(e -> openLoginWindow()); // Open Login Window
+        createAccountButton.addActionListener(e -> createAccountWindow()); // Open Create Account window
+
+        JPanel panel = new JPanel();
+        panel.setBackground(Color.LIGHT_GRAY); // Set background to light gray
+        panel.add(loginButton);
+        panel.add(createAccountButton);
+
+        loginFrame.add(panel);
+        loginFrame.setVisible(true);
+    }
+
+    // 2. Create Account Window
+    public void createAccountWindow() {
+        loginFrame.dispose(); // Close login window
+
+        createAccountFrame = new JFrame("Create Account");
+        createAccountFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        createAccountFrame.setSize(800, 800);
+
+
+        JLabel usernameLabel = new JLabel("Username:");
+        JLabel passwordLabel = new JLabel("Password:");
+        JLabel confirmPasswordLabel = new JLabel("Confirm Password:");
+
+        usernameField = new JTextField(15);
+        passwordField = new JPasswordField(15);
+        confirmPasswordField = new JPasswordField(15);
+
+        JButton createAccountSubmitButton = new JButton("Create Account");
+
+        createAccountSubmitButton.addActionListener(e -> {
+            if (validateCreateAccount()) {
+                registeredUsername = usernameField.getText();
+                registeredPassword = new String(passwordField.getPassword());
+                JOptionPane.showMessageDialog(null, "Account created successfully!");
+                createAccountFrame.dispose();
+                createLoginWindow(); // Return to login window after account creation
+            } else {
+                JOptionPane.showMessageDialog(null, "Passwords do not match, please try again.");
+            }
+        });
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(4, 2)); // Create a grid layout for the form
+        panel.setBackground(Color.LIGHT_GRAY); // Set background to light blue
+
+        panel.add(usernameLabel);
+        panel.add(usernameField);
+        panel.add(passwordLabel);
+        panel.add(passwordField);
+        panel.add(confirmPasswordLabel);
+        panel.add(confirmPasswordField);
+        panel.add(new JLabel()); // Empty label for alignment
+        panel.add(createAccountSubmitButton);
+
+        createAccountFrame.add(panel);
+        createAccountFrame.setVisible(true);
+    }
+
+    // Validate if password and confirm password match
+    public boolean validateCreateAccount() {
+        String password = new String(passwordField.getPassword());
+        String confirmPassword = new String(confirmPasswordField.getPassword());
+        return password.equals(confirmPassword);
+    }
+
+    // 3. Open Login Window (for entering username and password)
+    public void openLoginWindow() {
+        loginFrame.dispose(); // Close main login window
+
+        JFrame loginCredentialsFrame = new JFrame("Login Credentials");
+        loginCredentialsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        loginCredentialsFrame.setSize(800, 800);
+
+        JLabel usernameLabel = new JLabel("Username:");
+        JLabel passwordLabel = new JLabel("Password:");
+
+        loginUsernameField = new JTextField(15);
+        loginPasswordField = new JPasswordField(15);
+
+        JButton loginSubmitButton = new JButton("Login");
+
+        // Validate login on button click
+        loginSubmitButton.addActionListener(e -> {
+            if (validateLogin()) {
+                JOptionPane.showMessageDialog(null, "Login successful!");
+                loginCredentialsFrame.dispose();
+                createWelcomeWindow(); // Open Welcome window
+            } else {
+                JOptionPane.showMessageDialog(null, "Invalid username or password!");
+            }
+        });
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(3, 2));
+        panel.setBackground(new Color(144, 238, 144)); // Set background to a light green color using RGB
+
+        panel.add(usernameLabel);
+        panel.add(loginUsernameField);
+        panel.add(passwordLabel);
+        panel.add(loginPasswordField);
+        panel.add(new JLabel()); // Empty label for alignment
+        panel.add(loginSubmitButton);
+
+        loginCredentialsFrame.add(panel);
+        loginCredentialsFrame.setVisible(true);
+    }
+
+    // Validate login credentials
+    public boolean validateLogin() {
+        String enteredUsername = loginUsernameField.getText();
+        String enteredPassword = new String(loginPasswordField.getPassword());
+        return enteredUsername.equals(registeredUsername) && enteredPassword.equals(registeredPassword);
+    }
+
+    // 4. Welcome Window with Mood Dropdown
+    public void createWelcomeWindow() {
+        welcomeFrame = new JFrame("Welcome");
+        welcomeFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        welcomeFrame.setSize(800, 800);
+
+        JLabel welcomeLabel = new JLabel("Welcome! How are you?");
+        String[] moods = {"Normal", "Depressed", "Anxious"};
+        moodComboBox = new JComboBox<>(moods);
+        JButton nextButton = new JButton("Next");
+
+        nextButton.addActionListener(e -> createQuestionsWindow());
+
+        JPanel panel = new JPanel();
+        panel.setBackground(Color.LIGHT_GRAY); // Set background to light blue
+        panel.add(welcomeLabel);
+        panel.add(moodComboBox);
+        panel.add(nextButton);
+
+        welcomeFrame.add(panel);
+        welcomeFrame.setVisible(true);
+    }
+
+    // 5. Questions Window based on mood selection
+    public void createQuestionsWindow() {
+        welcomeFrame.dispose(); // Close welcome window
+        questionsFrame = new JFrame("Questions");
+        questionsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        questionsFrame.setSize(800, 800);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(Color.LIGHT_GRAY); // Set background to light blue
+
+        JLabel questionLabel = new JLabel(getQuestionsForMood((String) moodComboBox.getSelectedItem()));
+        yesButton = new JRadioButton("Yes");
+        noButton = new JRadioButton("No");
+        maybeButton = new JRadioButton("Maybe");
+
+        responseGroup = new ButtonGroup();
+        responseGroup.add(yesButton);
+        responseGroup.add(noButton);
+        responseGroup.add(maybeButton);
+
+        JButton submitButton = new JButton("Submit");
+        submitButton.addActionListener(e -> calculateScore());
+
+        panel.add(questionLabel);
+        panel.add(yesButton);
+        panel.add(noButton);
+        panel.add(maybeButton);
+        panel.add(submitButton);
+
+        questionsFrame.add(panel);
+        questionsFrame.setVisible(true);
+    }
+
+    // Get questions based on mood
+    public String getQuestionsForMood(String mood) {
+        if (mood.equals("Normal")) {
+            return "Do you feel balanced today?";
+        } else if (mood.equals("Depressed")) {
+            return "Are you feeling sad or empty?";
+        } else {
+            return "Are you feeling anxious or worried?";
+        }
+    }
+
+    // Calculate the score and show the results window
+    public void calculateScore() {
+        if (yesButton.isSelected()) {
+            score += 2;
+        } else if (noButton.isSelected()) {
+            score += 0;
+        } else if (maybeButton.isSelected()) {
+            score += 1;
+        }
+        createResultsWindow();
+    }
+
+    // 6. Results Window to display score and suggestions
+    public void createResultsWindow() {
+        questionsFrame.dispose(); // Close questions window
+        resultsFrame = new JFrame("Results");
+        resultsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        resultsFrame.setSize(800, 800);
+
+        JPanel panel = new JPanel();
+        panel.setBackground(Color.LIGHT_GRAY); // Set background to light blue
+
+        scoreLabel = new JLabel("Your score: " + score);
+        JLabel suggestionLabel = new JLabel(getSuggestionsForScore(score));
+
+        panel.add(scoreLabel);
+        panel.add(suggestionLabel);
+
+        resultsFrame.add(panel);
+        resultsFrame.setVisible(true);
+    }
+
+    // Get suggestions based on the score
+    public String getSuggestionsForScore(int score) {
+        if (score >= 4) {
+            return "Consider seeking professional help.";
+        } else if (score >= 2) {
+            return "Take some time to relax.";
+        } else {
+            return "You seem to be doing okay!";
+        }
+    }
+}
+	
+
+
